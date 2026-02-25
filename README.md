@@ -15,11 +15,13 @@ This repository contains a Dockerized Phase 1 implementation of the AWS Diagram 
 
 The renderer supports official AWS icon files for `EC2`, `RDS`, and `FSx`.
 
-Add these PNG files:
+Preferred file names:
 
 - `/Users/auguststartz/Documents/Code/Diagramer 2000/app/icons/aws/ec2.png`
 - `/Users/auguststartz/Documents/Code/Diagramer 2000/app/icons/aws/rds.png`
 - `/Users/auguststartz/Documents/Code/Diagramer 2000/app/icons/aws/fsx.png`
+
+It also auto-discovers icons recursively under `/Users/auguststartz/Documents/Code/Diagramer 2000/app/icons/aws` when filenames include `ec2`, `rds`, or `fsx`.
 
 Reference details: [app/icons/aws/README.md](/Users/auguststartz/Documents/Code/Diagramer%202000/app/icons/aws/README.md)
 

@@ -14,6 +14,12 @@ ICON_MAP = {
     "rds": ICON_ROOT / "rds.png",
     "fsx": ICON_ROOT / "fsx.png",
 }
+ICON_KEYWORDS = {
+    "ec2": ("ec2", "elastic-compute-cloud"),
+    "rds": ("rds", "relational-database"),
+    "fsx": ("fsx", "file-system"),
+}
+_RESOLVED_ICON_PATHS: dict[str, Path | None] = {}
 
 
 def _safe_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
@@ -21,6 +27,30 @@ def _safe_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
         return ImageFont.truetype("DejaVuSans.ttf", size=size)
     except OSError:
         return ImageFont.load_default()
+
+
+def _resolve_icon_path(icon_key: str) -> Path | None:
+    if icon_key in _RESOLVED_ICON_PATHS:
+        return _RESOLVED_ICON_PATHS[icon_key]
+
+    exact = ICON_MAP[icon_key]
+    if exact.exists():
+        _RESOLVED_ICON_PATHS[icon_key] = exact
+        return exact
+
+    keywords = ICON_KEYWORDS[icon_key]
+    candidates = sorted(
+        p for p in ICON_ROOT.rglob("*")
+        if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg"}
+    )
+    for candidate in candidates:
+        name = candidate.name.lower()
+        if any(keyword in name for keyword in keywords):
+            _RESOLVED_ICON_PATHS[icon_key] = candidate
+            return candidate
+
+    _RESOLVED_ICON_PATHS[icon_key] = None
+    return None
 
 
 def _distribute_servers(total_servers: int, az_count: int) -> list[int]:
@@ -35,8 +65,8 @@ def _draw_box(draw: ImageDraw.ImageDraw, xy: tuple[int, int, int, int], text: st
 
 
 def _load_icon(icon_key: str) -> Image.Image | None:
-    icon_path = ICON_MAP[icon_key]
-    if not icon_path.exists():
+    icon_path = _resolve_icon_path(icon_key)
+    if icon_path is None:
         return None
     with Image.open(icon_path) as icon:
         return icon.convert("RGBA")
@@ -149,17 +179,23 @@ def generate_png(payload: DiagramRequest) -> bytes:
         services.append(("Amazon FSx", "fsx"))
 
     if services:
-        service_box = (60, 920, 1600, 1070)
+        service_box_top = inner_top + ((inner_bottom - inner_top) // 2) - 70
+        service_box = (region_box[0] + 80, service_box_top, region_box[2] - 80, service_box_top + 150)
         _draw_box(draw, service_box, "Data Tier Services", outline="#1D4ED8", width=2)
-        x = service_box[0] + 220
-        y = service_box[1] + 26
-        spacing = 260
-        arrow_start = (830, 900)
+        node_w = 220
+        spacing = 30
+        total_nodes_w = (len(services) * node_w) + ((len(services) - 1) * spacing)
+        x = service_box[0] + ((service_box[2] - service_box[0] - total_nodes_w) // 2)
+        y = service_box[1] + 28
+        az1_center_x = inner_left + (az_width // 2)
+        az2_center_x = inner_left + (az_width + gap) + (az_width // 2) if az_count >= 2 else az1_center_x
+        target_y = service_box[1]
         for i, (service, icon_key) in enumerate(services):
-            sx = x + i * spacing
+            sx = x + i * (node_w + spacing)
             _draw_service_node(image, draw, sx, y, service, icon_key)
-            arrow_end = (sx + 110, y)
-            draw.line((arrow_start, arrow_end), fill="#1D4ED8", width=3)
+            service_center_x = sx + (node_w // 2)
+            draw.line((az1_center_x, target_y - 10, service_center_x, target_y), fill="#1D4ED8", width=3)
+            draw.line((az2_center_x, target_y - 10, service_center_x, target_y), fill="#1D4ED8", width=3)
 
     footer = f"Production servers: {payload.production_server_count} | AZs: {payload.availability_zone_count}"
     footer_y = 1040 if services else 1020
