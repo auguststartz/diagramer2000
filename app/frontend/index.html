@@ -58,6 +58,31 @@
           EPIC
         </label>
 
+        <label class="check-row" style="margin-left: 24px;">
+          <input type="checkbox" name="customer_network_mfp" />
+          MFP
+        </label>
+
+        <label class="check-row" style="margin-left: 24px;">
+          <input type="checkbox" name="customer_network_smtp" />
+          SMTP
+        </label>
+
+        <label class="check-row" style="margin-left: 24px;">
+          <input type="checkbox" name="customer_network_exchange" />
+          Exchange
+        </label>
+
+        <label class="check-row" style="margin-left: 24px;">
+          <input type="checkbox" name="customer_network_directory" />
+          Network Directory
+        </label>
+
+        <label class="check-row" style="margin-left: 24px;">
+          <input type="checkbox" name="customer_network_autoprint" />
+          AutoPrint
+        </label>
+
         <label>
           Footer Text
           <textarea name="footer_text" maxlength="300" rows="3">OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.</textarea>
@@ -107,6 +132,11 @@
       payload.include_vpn = formData.get('include_vpn') === 'on';
       payload.show_customer_network = formData.get('show_customer_network') === 'on';
       payload.customer_network_epic = formData.get('customer_network_epic') === 'on';
+      payload.customer_network_mfp = formData.get('customer_network_mfp') === 'on';
+      payload.customer_network_smtp = formData.get('customer_network_smtp') === 'on';
+      payload.customer_network_exchange = formData.get('customer_network_exchange') === 'on';
+      payload.customer_network_directory = formData.get('customer_network_directory') === 'on';
+      payload.customer_network_autoprint = formData.get('customer_network_autoprint') === 'on';
       payload.footer_text = formData.get('footer_text') || '';
 
       const response = await fetch('/api/v1/diagram.png', {

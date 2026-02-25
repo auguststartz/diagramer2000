@@ -66,6 +66,11 @@ def test_customer_network_defaults() -> None:
     )
     assert payload.show_customer_network is False
     assert payload.customer_network_epic is False
+    assert payload.customer_network_mfp is False
+    assert payload.customer_network_smtp is False
+    assert payload.customer_network_exchange is False
+    assert payload.customer_network_directory is False
+    assert payload.customer_network_autoprint is False
 
     payload_on = DiagramRequest(
         customer_name="Acme",

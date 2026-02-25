@@ -12,6 +12,11 @@ class DiagramRequest(BaseModel):
     include_vpn: bool = False
     show_customer_network: bool = False
     customer_network_epic: bool = False
+    customer_network_mfp: bool = False
+    customer_network_smtp: bool = False
+    customer_network_exchange: bool = False
+    customer_network_directory: bool = False
+    customer_network_autoprint: bool = False
     footer_text: str = Field(
         default="OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.",
         max_length=300,

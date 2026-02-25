@@ -141,23 +141,42 @@ def generate_png(payload: DiagramRequest) -> bytes:
         draw.rounded_rectangle(cn_box, radius=14, outline="#16A34A", width=3, fill="#F0FDF4")
         draw.text((cn_box[0] + 16, cn_box[1] + 12), "Customer Network", fill="#111827", font=_safe_font(26))
 
-        # Draw EPIC node if enabled
+        # Build list of enabled customer network nodes
+        cn_nodes: list[str] = []
         if payload.customer_network_epic:
-            epic_w, epic_h = 150, 80
-            epic_x = cn_box[0] + (cn_box[2] - cn_box[0] - epic_w) // 2
-            epic_y = cn_box[1] + (cn_box[3] - cn_box[1] - epic_h) // 2
-            draw.rounded_rectangle(
-                (epic_x, epic_y, epic_x + epic_w, epic_y + epic_h),
-                radius=10, fill="#F0FDF4", outline="#16A34A", width=2,
-            )
-            epic_font = _safe_font(22)
-            bbox = draw.textbbox((0, 0), "EPIC", font=epic_font)
-            tw = bbox[2] - bbox[0]
-            th = bbox[3] - bbox[1]
-            draw.text(
-                (epic_x + (epic_w - tw) // 2, epic_y + (epic_h - th) // 2),
-                "EPIC", fill="#16A34A", font=epic_font,
-            )
+            cn_nodes.append("EPIC")
+        if payload.customer_network_mfp:
+            cn_nodes.append("MFP")
+        if payload.customer_network_smtp:
+            cn_nodes.append("SMTP")
+        if payload.customer_network_exchange:
+            cn_nodes.append("Exchange")
+        if payload.customer_network_directory:
+            cn_nodes.append("Network Directory")
+        if payload.customer_network_autoprint:
+            cn_nodes.append("AutoPrint")
+
+        if cn_nodes:
+            node_w, node_h = 150, 80
+            node_gap = 20
+            total_w = len(cn_nodes) * node_w + (len(cn_nodes) - 1) * node_gap
+            start_x = cn_box[0] + (cn_box[2] - cn_box[0] - total_w) // 2
+            node_y = cn_box[1] + (cn_box[3] - cn_box[1] - node_h) // 2
+
+            for i, label in enumerate(cn_nodes):
+                nx = start_x + i * (node_w + node_gap)
+                draw.rounded_rectangle(
+                    (nx, node_y, nx + node_w, node_y + node_h),
+                    radius=10, fill="#F0FDF4", outline="#16A34A", width=2,
+                )
+                font = _safe_font(22)
+                bbox = draw.textbbox((0, 0), label, font=font)
+                tw = bbox[2] - bbox[0]
+                th = bbox[3] - bbox[1]
+                draw.text(
+                    (nx + (node_w - tw) // 2, node_y + (node_h - th) // 2),
+                    label, fill="#16A34A", font=font,
+                )
 
         # Connection line from Customer Network to Region box
         line_x = (cn_box[0] + cn_box[2]) // 2
