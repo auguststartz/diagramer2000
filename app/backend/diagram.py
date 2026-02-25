@@ -21,6 +21,12 @@ ICON_KEYWORDS = {
 }
 _RESOLVED_ICON_PATHS: dict[str, Path | None] = {}
 
+CENTER_COL_WIDTH = 240
+CENTER_COL_GAP = 16
+SERVICE_NODE_WIDTH = 190
+SERVICE_NODE_HEIGHT = 86
+SERVICE_STACK_SPACING = 24
+
 
 def _safe_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     try:
@@ -120,17 +126,29 @@ def generate_png(payload: DiagramRequest) -> bytes:
     _draw_box(draw, region_box, f"AWS Region: {payload.region}")
 
     az_count = payload.availability_zone_count
+    include_rds = payload.include_rds
+    include_fsx = payload.include_fsx
     inner_left = region_box[0] + 30
     inner_top = region_box[1] + 70
     inner_right = region_box[2] - 30
     inner_bottom = region_box[3] - 40
     gap = 24
-    az_width = (inner_right - inner_left - (gap * (az_count - 1))) // az_count
+    use_center_column = (include_rds or include_fsx) and az_count >= 2
+    if use_center_column:
+        az_width = (inner_right - inner_left - CENTER_COL_GAP - CENTER_COL_WIDTH - CENTER_COL_GAP) // 2
+    else:
+        az_width = (inner_right - inner_left - (gap * (az_count - 1))) // az_count
 
     dist = _distribute_servers(payload.production_server_count, az_count)
 
     for idx in range(az_count):
-        x0 = inner_left + idx * (az_width + gap)
+        if use_center_column:
+            if idx == 0:
+                x0 = inner_left
+            else:
+                x0 = inner_left + az_width + CENTER_COL_GAP + CENTER_COL_WIDTH + CENTER_COL_GAP
+        else:
+            x0 = inner_left + idx * (az_width + gap)
         x1 = x0 + az_width
         y0 = inner_top
         y1 = inner_bottom
@@ -178,34 +196,58 @@ def generate_png(payload: DiagramRequest) -> bytes:
     if payload.include_fsx:
         services.append(("Amazon FSx", "fsx"))
 
-    if services:
-        node_w = 190
-        node_h = 86
-        stack_spacing = 24
+    if services and use_center_column:
+        # -- Center column between two AZs --
+        col_x0 = inner_left + az_width + CENTER_COL_GAP
+        col_x1 = col_x0 + CENTER_COL_WIDTH
+        col_y0 = inner_top
+        col_y1 = inner_bottom
+        draw.rounded_rectangle(
+            (col_x0, col_y0, col_x1, col_y1),
+            radius=14, fill="#EFF6FF", outline="#93C5FD", width=1,
+        )
 
-        if az_count >= 2:
-            az1_right_x = inner_left + az_width
-            az2_left_x = inner_left + az_width + gap
-            shared_center_x = (az1_right_x + az2_left_x) // 2
-            az1_source_x = az1_right_x - 14
-            az2_source_x = az2_left_x + 14
-        else:
-            shared_center_x = inner_left + (az_width // 2)
-            az1_source_x = shared_center_x - 120
-            az2_source_x = shared_center_x + 120
+        total_stack_h = (len(services) * SERVICE_NODE_HEIGHT) + ((len(services) - 1) * SERVICE_STACK_SPACING)
+        stack_start_y = col_y0 + ((col_y1 - col_y0 - total_stack_h) // 2)
+        stack_x = col_x0 + (CENTER_COL_WIDTH - SERVICE_NODE_WIDTH) // 2
 
-        total_stack_h = (len(services) * node_h) + ((len(services) - 1) * stack_spacing)
+        label_font = _safe_font(18)
+        label_text = "Shared Data Tier Services"
+        draw.text((col_x0 + 10, stack_start_y - 30), label_text, fill="#1E3A8A", font=label_font)
+
+        az1_right = inner_left + az_width
+        az2_left = col_x1 + CENTER_COL_GAP
+        dot_r = 4
+        line_color = "#3B82F6"
+
+        for i, (service, icon_key) in enumerate(services):
+            sy = stack_start_y + i * (SERVICE_NODE_HEIGHT + SERVICE_STACK_SPACING)
+            _draw_service_node(image, draw, stack_x, sy, service, icon_key)
+            cy = sy + SERVICE_NODE_HEIGHT // 2
+            node_left = stack_x
+            node_right = stack_x + SERVICE_NODE_WIDTH
+
+            # Connection line from AZ1 right edge to service node left edge
+            draw.line((az1_right, cy, node_left, cy), fill=line_color, width=2)
+            draw.ellipse((az1_right - dot_r, cy - dot_r, az1_right + dot_r, cy + dot_r), fill=line_color)
+            draw.ellipse((node_left - dot_r, cy - dot_r, node_left + dot_r, cy + dot_r), fill=line_color)
+
+            # Connection line from service node right edge to AZ2 left edge
+            draw.line((node_right, cy, az2_left, cy), fill=line_color, width=2)
+            draw.ellipse((node_right - dot_r, cy - dot_r, node_right + dot_r, cy + dot_r), fill=line_color)
+            draw.ellipse((az2_left - dot_r, cy - dot_r, az2_left + dot_r, cy + dot_r), fill=line_color)
+
+    elif services:
+        # -- Fallback: single AZ with services (no center column) --
+        shared_center_x = inner_left + (az_width // 2)
+        total_stack_h = (len(services) * SERVICE_NODE_HEIGHT) + ((len(services) - 1) * SERVICE_STACK_SPACING)
         stack_start_y = inner_top + ((inner_bottom - inner_top - total_stack_h) // 2)
-        stack_x = shared_center_x - (node_w // 2)
+        stack_x = shared_center_x - (SERVICE_NODE_WIDTH // 2)
 
         draw.text((stack_x - 8, stack_start_y - 34), "Shared Data Tier Services", fill="#1E3A8A", font=_safe_font(22))
         for i, (service, icon_key) in enumerate(services):
-            sy = stack_start_y + i * (node_h + stack_spacing)
+            sy = stack_start_y + i * (SERVICE_NODE_HEIGHT + SERVICE_STACK_SPACING)
             _draw_service_node(image, draw, stack_x, sy, service, icon_key)
-            service_center_x = stack_x + (node_w // 2)
-            service_center_y = sy + (node_h // 2)
-            draw.line((az1_source_x, service_center_y, service_center_x - (node_w // 2), service_center_y), fill="#1D4ED8", width=3)
-            draw.line((az2_source_x, service_center_y, service_center_x + (node_w // 2), service_center_y), fill="#1D4ED8", width=3)
 
     footer = f"Production servers: {payload.production_server_count} | AZs: {payload.availability_zone_count}"
     footer_y = 1020
