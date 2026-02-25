@@ -141,20 +141,22 @@ def generate_png(payload: DiagramRequest) -> bytes:
         draw.rounded_rectangle(cn_box, radius=14, outline="#16A34A", width=3, fill="#F0FDF4")
         draw.text((cn_box[0] + 16, cn_box[1] + 12), "Customer Network", fill="#111827", font=_safe_font(26))
 
-        # Build list of enabled customer network nodes
-        cn_nodes: list[str] = []
+        # Build list of enabled customer network nodes (label, color)
+        cn_nodes: list[tuple[str, str]] = []
         if payload.customer_network_epic:
-            cn_nodes.append("EPIC")
+            cn_nodes.append(("EPIC", "#16A34A"))
         if payload.customer_network_mfp:
-            cn_nodes.append("MFP")
+            cn_nodes.append(("MFP", "#16A34A"))
         if payload.customer_network_smtp:
-            cn_nodes.append("SMTP")
+            cn_nodes.append(("SMTP", "#16A34A"))
         if payload.customer_network_exchange:
-            cn_nodes.append("Exchange")
+            cn_nodes.append(("Exchange", "#16A34A"))
         if payload.customer_network_directory:
-            cn_nodes.append("Network Directory")
+            cn_nodes.append(("Network Directory", "#16A34A"))
         if payload.customer_network_autoprint:
-            cn_nodes.append("AutoPrint")
+            cn_nodes.append(("AutoPrint", "#16A34A"))
+        if payload.customer_network_otfaim:
+            cn_nodes.append(("OTFAIM", "#111827"))
 
         if cn_nodes:
             node_w, node_h = 150, 80
@@ -163,11 +165,11 @@ def generate_png(payload: DiagramRequest) -> bytes:
             start_x = cn_box[0] + (cn_box[2] - cn_box[0] - total_w) // 2
             node_y = cn_box[1] + (cn_box[3] - cn_box[1] - node_h) // 2
 
-            for i, label in enumerate(cn_nodes):
+            for i, (label, color) in enumerate(cn_nodes):
                 nx = start_x + i * (node_w + node_gap)
                 draw.rounded_rectangle(
                     (nx, node_y, nx + node_w, node_y + node_h),
-                    radius=10, fill="#F0FDF4", outline="#16A34A", width=2,
+                    radius=10, fill="#F0FDF4", outline=color, width=2,
                 )
                 font = _safe_font(22)
                 bbox = draw.textbbox((0, 0), label, font=font)
@@ -175,7 +177,7 @@ def generate_png(payload: DiagramRequest) -> bytes:
                 th = bbox[3] - bbox[1]
                 draw.text(
                     (nx + (node_w - tw) // 2, node_y + (node_h - th) // 2),
-                    label, fill="#16A34A", font=font,
+                    label, fill=color, font=font,
                 )
 
         # Connection line from Customer Network to Region box

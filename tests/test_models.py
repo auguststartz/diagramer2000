@@ -71,6 +71,7 @@ def test_customer_network_defaults() -> None:
     assert payload.customer_network_exchange is False
     assert payload.customer_network_directory is False
     assert payload.customer_network_autoprint is False
+    assert payload.customer_network_otfaim is False
 
     payload_on = DiagramRequest(
         customer_name="Acme",

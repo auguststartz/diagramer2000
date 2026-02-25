@@ -83,6 +83,11 @@
           AutoPrint
         </label>
 
+        <label class="check-row" style="margin-left: 24px;">
+          <input type="checkbox" name="customer_network_otfaim" />
+          OTFAIM
+        </label>
+
         <label>
           Footer Text
           <textarea name="footer_text" maxlength="300" rows="3">OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.</textarea>
@@ -137,6 +142,7 @@
       payload.customer_network_exchange = formData.get('customer_network_exchange') === 'on';
       payload.customer_network_directory = formData.get('customer_network_directory') === 'on';
       payload.customer_network_autoprint = formData.get('customer_network_autoprint') === 'on';
+      payload.customer_network_otfaim = formData.get('customer_network_otfaim') === 'on';
       payload.footer_text = formData.get('footer_text') || '';
 
       const response = await fetch('/api/v1/diagram.png', {
