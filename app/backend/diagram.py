@@ -99,14 +99,14 @@ def _draw_ec2_node(canvas: Image.Image, draw: ImageDraw.ImageDraw, x: int, y: in
 
 
 def _draw_service_node(canvas: Image.Image, draw: ImageDraw.ImageDraw, x: int, y: int, label: str, icon_key: str) -> None:
-    node_w = 220
-    node_h = 110
+    node_w = 190
+    node_h = 86
     draw.rounded_rectangle((x, y, x + node_w, y + node_h), radius=10, fill="#EFF6FF", outline="#1D4ED8", width=2)
-    has_icon = _paste_icon(canvas, icon_key, x + 14, y + 18, (56, 56))
+    has_icon = _paste_icon(canvas, icon_key, x + 10, y + 15, (52, 52))
     if not has_icon:
-        draw.rounded_rectangle((x + 14, y + 18, x + 70, y + 74), radius=8, fill="#DBEAFE", outline="#1D4ED8", width=2)
-        draw.text((x + 26, y + 40), label[:3], fill="#1E3A8A", font=_safe_font(14))
-    draw.text((x + 84, y + 44), label, fill="#1E3A8A", font=_safe_font(24))
+        draw.rounded_rectangle((x + 10, y + 15, x + 62, y + 67), radius=8, fill="#DBEAFE", outline="#1D4ED8", width=2)
+        draw.text((x + 19, y + 33), label[:3], fill="#1E3A8A", font=_safe_font(13))
+    draw.text((x + 72, y + 34), label, fill="#1E3A8A", font=_safe_font(18))
 
 
 def generate_png(payload: DiagramRequest) -> bytes:
@@ -179,26 +179,36 @@ def generate_png(payload: DiagramRequest) -> bytes:
         services.append(("Amazon FSx", "fsx"))
 
     if services:
-        service_box_top = inner_top + ((inner_bottom - inner_top) // 2) - 70
-        service_box = (region_box[0] + 80, service_box_top, region_box[2] - 80, service_box_top + 150)
-        _draw_box(draw, service_box, "Data Tier Services", outline="#1D4ED8", width=2)
-        node_w = 220
-        spacing = 30
-        total_nodes_w = (len(services) * node_w) + ((len(services) - 1) * spacing)
-        x = service_box[0] + ((service_box[2] - service_box[0] - total_nodes_w) // 2)
-        y = service_box[1] + 28
-        az1_center_x = inner_left + (az_width // 2)
-        az2_center_x = inner_left + (az_width + gap) + (az_width // 2) if az_count >= 2 else az1_center_x
-        target_y = service_box[1]
+        node_w = 190
+        node_h = 86
+        stack_spacing = 24
+
+        if az_count >= 2:
+            az1_right_x = inner_left + az_width
+            az2_left_x = inner_left + az_width + gap
+            shared_center_x = (az1_right_x + az2_left_x) // 2
+            az1_source_x = az1_right_x - 14
+            az2_source_x = az2_left_x + 14
+        else:
+            shared_center_x = inner_left + (az_width // 2)
+            az1_source_x = shared_center_x - 120
+            az2_source_x = shared_center_x + 120
+
+        total_stack_h = (len(services) * node_h) + ((len(services) - 1) * stack_spacing)
+        stack_start_y = inner_top + ((inner_bottom - inner_top - total_stack_h) // 2)
+        stack_x = shared_center_x - (node_w // 2)
+
+        draw.text((stack_x - 8, stack_start_y - 34), "Shared Data Tier Services", fill="#1E3A8A", font=_safe_font(22))
         for i, (service, icon_key) in enumerate(services):
-            sx = x + i * (node_w + spacing)
-            _draw_service_node(image, draw, sx, y, service, icon_key)
-            service_center_x = sx + (node_w // 2)
-            draw.line((az1_center_x, target_y - 10, service_center_x, target_y), fill="#1D4ED8", width=3)
-            draw.line((az2_center_x, target_y - 10, service_center_x, target_y), fill="#1D4ED8", width=3)
+            sy = stack_start_y + i * (node_h + stack_spacing)
+            _draw_service_node(image, draw, stack_x, sy, service, icon_key)
+            service_center_x = stack_x + (node_w // 2)
+            service_center_y = sy + (node_h // 2)
+            draw.line((az1_source_x, service_center_y, service_center_x - (node_w // 2), service_center_y), fill="#1D4ED8", width=3)
+            draw.line((az2_source_x, service_center_y, service_center_x + (node_w // 2), service_center_y), fill="#1D4ED8", width=3)
 
     footer = f"Production servers: {payload.production_server_count} | AZs: {payload.availability_zone_count}"
-    footer_y = 1040 if services else 1020
+    footer_y = 1020
     draw.text((50, footer_y), footer, fill="#4B5563", font=_safe_font(24))
 
     output = BytesIO()
