@@ -13,11 +13,13 @@ ICON_MAP = {
     "ec2": ICON_ROOT / "ec2.png",
     "rds": ICON_ROOT / "rds.png",
     "fsx": ICON_ROOT / "fsx.png",
+    "vpn": ICON_ROOT / "vpn.png",
 }
 ICON_KEYWORDS = {
     "ec2": ("ec2", "elastic-compute-cloud"),
     "rds": ("rds", "relational-database"),
     "fsx": ("fsx", "file-system"),
+    "vpn": ("vpn", "transit-gateway", "virtual-private-network"),
 }
 _RESOLVED_ICON_PATHS: dict[str, Path | None] = {}
 
@@ -178,7 +180,7 @@ def generate_png(payload: DiagramRequest) -> bytes:
     inner_right = region_box[2] - 30
     inner_bottom = region_box[3] - 40
     gap = 24
-    use_center_column = (include_rds or include_fsx) and az_count >= 2
+    use_center_column = (include_rds or include_fsx or payload.include_vpn) and az_count >= 2
     if use_center_column:
         az_width = (inner_right - inner_left - CENTER_COL_GAP - CENTER_COL_WIDTH - CENTER_COL_GAP) // 2
     else:
@@ -260,6 +262,8 @@ def generate_png(payload: DiagramRequest) -> bytes:
             _draw_ec2_node(image, draw, np_x, ny, f"OpenText Fax Server {i + 1}", np_node_w, np_node_h)
 
     services: list[tuple[str, str]] = []
+    if payload.include_vpn:
+        services.append(("AWS Transit VPN", "vpn"))
     if payload.include_rds:
         services.append(("Amazon RDS", "rds"))
     if payload.include_fsx:

@@ -76,3 +76,12 @@ def test_customer_network_defaults() -> None:
     )
     assert payload_on.show_customer_network is True
     assert payload_on.customer_network_epic is True
+
+
+def test_include_vpn_default() -> None:
+    payload = DiagramRequest(
+        customer_name="Acme",
+        region="us-east-1",
+        production_server_count=2,
+    )
+    assert payload.include_vpn is False

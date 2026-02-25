@@ -9,6 +9,7 @@ class DiagramRequest(BaseModel):
     non_production_server_count: int = Field(ge=0, le=20, default=0)
     include_rds: bool = False
     include_fsx: bool = False
+    include_vpn: bool = False
     show_customer_network: bool = False
     customer_network_epic: bool = False
     footer_text: str = Field(

@@ -44,6 +44,11 @@
         </label>
 
         <label class="check-row">
+          <input type="checkbox" name="include_vpn" />
+          Include AWS Transit VPN
+        </label>
+
+        <label class="check-row">
           <input type="checkbox" name="show_customer_network" />
           Show Customer Network
         </label>
@@ -99,6 +104,7 @@
       payload.non_production_server_count = Number(payload.non_production_server_count || 0);
       payload.include_rds = formData.get('include_rds') === 'on';
       payload.include_fsx = formData.get('include_fsx') === 'on';
+      payload.include_vpn = formData.get('include_vpn') === 'on';
       payload.show_customer_network = formData.get('show_customer_network') === 'on';
       payload.customer_network_epic = formData.get('customer_network_epic') === 'on';
       payload.footer_text = formData.get('footer_text') || '';
