@@ -43,6 +43,16 @@
           Include Amazon FSx
         </label>
 
+        <label class="check-row">
+          <input type="checkbox" name="show_customer_network" />
+          Show Customer Network
+        </label>
+
+        <label class="check-row" style="margin-left: 24px;">
+          <input type="checkbox" name="customer_network_epic" />
+          EPIC
+        </label>
+
         <label>
           Footer Text
           <textarea name="footer_text" maxlength="300" rows="3">OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.</textarea>
@@ -89,6 +99,8 @@
       payload.non_production_server_count = Number(payload.non_production_server_count || 0);
       payload.include_rds = formData.get('include_rds') === 'on';
       payload.include_fsx = formData.get('include_fsx') === 'on';
+      payload.show_customer_network = formData.get('show_customer_network') === 'on';
+      payload.customer_network_epic = formData.get('customer_network_epic') === 'on';
       payload.footer_text = formData.get('footer_text') || '';
 
       const response = await fetch('/api/v1/diagram.png', {

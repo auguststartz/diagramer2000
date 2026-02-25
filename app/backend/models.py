@@ -9,6 +9,8 @@ class DiagramRequest(BaseModel):
     non_production_server_count: int = Field(ge=0, le=20, default=0)
     include_rds: bool = False
     include_fsx: bool = False
+    show_customer_network: bool = False
+    customer_network_epic: bool = False
     footer_text: str = Field(
         default="OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.",
         max_length=300,

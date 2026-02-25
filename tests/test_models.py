@@ -56,3 +56,23 @@ def test_invalid_numeric_ranges(field: str, value: int) -> None:
 
     with pytest.raises(ValidationError):
         DiagramRequest(**kwargs)
+
+
+def test_customer_network_defaults() -> None:
+    payload = DiagramRequest(
+        customer_name="Acme",
+        region="us-east-1",
+        production_server_count=2,
+    )
+    assert payload.show_customer_network is False
+    assert payload.customer_network_epic is False
+
+    payload_on = DiagramRequest(
+        customer_name="Acme",
+        region="us-east-1",
+        production_server_count=2,
+        show_customer_network=True,
+        customer_network_epic=True,
+    )
+    assert payload_on.show_customer_network is True
+    assert payload_on.customer_network_epic is True

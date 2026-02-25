@@ -87,21 +87,30 @@ def _paste_icon(canvas: Image.Image, icon_key: str, x: int, y: int, size: tuple[
     return True
 
 
-def _draw_ec2_node(canvas: Image.Image, draw: ImageDraw.ImageDraw, x: int, y: int, label: str) -> None:
-    node_w = 170
-    node_h = 140
-    draw.rounded_rectangle((x, y, x + node_w, y + node_h), radius=10, fill="#F8FAFC", outline="#9CA3AF", width=2)
-    has_icon = _paste_icon(canvas, "ec2", x + 53, y + 10, (64, 64))
-    if not has_icon:
-        draw.rounded_rectangle((x + 53, y + 10, x + 117, y + 74), radius=8, fill="#FFE6B3", outline="#9A6700", width=2)
-        draw.text((x + 68, y + 32), "EC2", fill="#111827", font=_safe_font(16))
+def _draw_ec2_node(canvas: Image.Image, draw: ImageDraw.ImageDraw, x: int, y: int, label: str, node_w: int = 170, node_h: int = 140) -> None:
+    sx = node_w / 170
+    sy = node_h / 140
+    s = min(sx, sy)
 
-    draw.text((x + 8, y + 80), "EC2 Instance", fill="#111827", font=_safe_font(17))
+    draw.rounded_rectangle((x, y, x + node_w, y + node_h), radius=10, fill="#F8FAFC", outline="#9CA3AF", width=2)
+
+    icon_sz = max(int(64 * s), 16)
+    icon_x = x + (node_w - icon_sz) // 2
+    icon_y = y + max(int(10 * sy), 4)
+    has_icon = _paste_icon(canvas, "ec2", icon_x, icon_y, (icon_sz, icon_sz))
+    if not has_icon:
+        draw.rounded_rectangle((icon_x, icon_y, icon_x + icon_sz, icon_y + icon_sz), radius=8, fill="#FFE6B3", outline="#9A6700", width=2)
+        ec2_font = _safe_font(max(int(16 * s), 8))
+        draw.text((icon_x + icon_sz // 4, icon_y + icon_sz // 4), "EC2", fill="#111827", font=ec2_font)
+
+    draw.text((x + int(8 * sx), y + int(80 * sy)), "EC2 Instance", fill="#111827", font=_safe_font(max(int(17 * s), 10)))
+    sub_y = y + int(102 * sy)
+    sub_font = _safe_font(max(int(14 * s), 8))
     if label.startswith("OpenText Fax Server "):
         server_number = label.replace("OpenText Fax Server ", "", 1)
-        draw.text((x + 8, y + 102), f"OpenText Fax Server {server_number}", fill="#374151", font=_safe_font(14))
+        draw.text((x + int(8 * sx), sub_y), f"OpenText Fax Server {server_number}", fill="#374151", font=sub_font)
     else:
-        draw.text((x + 8, y + 102), label, fill="#374151", font=_safe_font(14))
+        draw.text((x + int(8 * sx), sub_y), label, fill="#374151", font=sub_font)
 
 
 def _draw_service_node(canvas: Image.Image, draw: ImageDraw.ImageDraw, x: int, y: int, label: str, icon_key: str) -> None:
@@ -122,7 +131,43 @@ def generate_png(payload: DiagramRequest) -> bytes:
     title = f"{payload.customer_name} - AWS Architecture"
     draw.text((50, 26), title, fill="#111827", font=_safe_font(44))
 
-    region_box = (60, 120, 1600, 900)
+    if payload.show_customer_network:
+        cn_box = (60, 110, 1600, 260)
+        region_box = (60, 290, 1600, 900)
+
+        # Draw Customer Network box
+        draw.rounded_rectangle(cn_box, radius=14, outline="#16A34A", width=3, fill="#F0FDF4")
+        draw.text((cn_box[0] + 16, cn_box[1] + 12), "Customer Network", fill="#111827", font=_safe_font(26))
+
+        # Draw EPIC node if enabled
+        if payload.customer_network_epic:
+            epic_w, epic_h = 150, 80
+            epic_x = cn_box[0] + (cn_box[2] - cn_box[0] - epic_w) // 2
+            epic_y = cn_box[1] + (cn_box[3] - cn_box[1] - epic_h) // 2
+            draw.rounded_rectangle(
+                (epic_x, epic_y, epic_x + epic_w, epic_y + epic_h),
+                radius=10, fill="#F0FDF4", outline="#16A34A", width=2,
+            )
+            epic_font = _safe_font(22)
+            bbox = draw.textbbox((0, 0), "EPIC", font=epic_font)
+            tw = bbox[2] - bbox[0]
+            th = bbox[3] - bbox[1]
+            draw.text(
+                (epic_x + (epic_w - tw) // 2, epic_y + (epic_h - th) // 2),
+                "EPIC", fill="#16A34A", font=epic_font,
+            )
+
+        # Connection line from Customer Network to Region box
+        line_x = (cn_box[0] + cn_box[2]) // 2
+        line_y_top = cn_box[3]
+        line_y_bottom = region_box[1]
+        dot_r = 4
+        draw.line((line_x, line_y_top, line_x, line_y_bottom), fill="#1F2937", width=2)
+        draw.ellipse((line_x - dot_r, line_y_top - dot_r, line_x + dot_r, line_y_top + dot_r), fill="#1F2937")
+        draw.ellipse((line_x - dot_r, line_y_bottom - dot_r, line_x + dot_r, line_y_bottom + dot_r), fill="#1F2937")
+    else:
+        region_box = (60, 120, 1600, 900)
+
     _draw_box(draw, region_box, f"AWS Region: {payload.region}")
 
     az_count = payload.availability_zone_count
@@ -158,7 +203,7 @@ def generate_png(payload: DiagramRequest) -> bytes:
         if node_count == 0:
             continue
 
-        cols = min(3, node_count)
+        cols = min(3, ceil(node_count / 3))
         rows = ceil(node_count / cols)
         node_gap_x = 20
         node_gap_y = 20
@@ -166,6 +211,16 @@ def generate_png(payload: DiagramRequest) -> bytes:
         node_h = 140
         grid_w = cols * node_w + (cols - 1) * node_gap_x
         grid_h = rows * node_h + (rows - 1) * node_gap_y
+
+        available_h = y1 - y0 - 120  # 80px top padding + 40px bottom padding
+        if grid_h > available_h and grid_h > 0:
+            scale = available_h / grid_h
+            node_w = int(node_w * scale)
+            node_h = int(node_h * scale)
+            node_gap_x = int(node_gap_x * scale)
+            node_gap_y = int(node_gap_y * scale)
+            grid_w = cols * node_w + (cols - 1) * node_gap_x
+            grid_h = rows * node_h + (rows - 1) * node_gap_y
 
         start_x = x0 + (az_width - grid_w) // 2
         start_y = y0 + 80 + max(0, (y1 - y0 - 120 - grid_h) // 2)
@@ -176,19 +231,33 @@ def generate_png(payload: DiagramRequest) -> bytes:
             c = n % cols
             nx = start_x + c * (node_w + node_gap_x)
             ny = start_y + r * (node_h + node_gap_y)
-            _draw_ec2_node(image, draw, nx, ny, f"OpenText Fax Server {server_num}")
+            _draw_ec2_node(image, draw, nx, ny, f"OpenText Fax Server {server_num}", node_w, node_h)
             server_num += 1
 
     if payload.non_production_server_count > 0:
-        non_prod_box = (1640, 180, 1880, 900)
+        non_prod_box = (1640, region_box[1] + 60, 1880, 900)
         _draw_box(draw, non_prod_box, "Non-Production", outline="#7C3AED")
 
         max_nodes = payload.non_production_server_count
+        np_node_w = 170
+        np_node_h = 140
+        np_gap = 10
+        np_start_y = non_prod_box[1] + 70
+        np_available_h = non_prod_box[3] - 10 - np_start_y
+        np_total_h = max_nodes * np_node_h + (max_nodes - 1) * np_gap
+
+        if np_total_h > np_available_h and np_total_h > 0:
+            scale = np_available_h / np_total_h
+            np_node_w = int(np_node_w * scale)
+            np_node_h = int(np_node_h * scale)
+            np_gap = int(np_gap * scale)
+
+        np_x = non_prod_box[0] + (non_prod_box[2] - non_prod_box[0] - np_node_w) // 2
         for i in range(max_nodes):
-            ny = 250 + (i * 150)
-            if ny + 140 > non_prod_box[3] - 10:
+            ny = np_start_y + i * (np_node_h + np_gap)
+            if ny + np_node_h > non_prod_box[3] - 10:
                 break
-            _draw_ec2_node(image, draw, 1676, ny, f"OpenText Fax Server {i + 1}")
+            _draw_ec2_node(image, draw, np_x, ny, f"OpenText Fax Server {i + 1}", np_node_w, np_node_h)
 
     services: list[tuple[str, str]] = []
     if payload.include_rds:
