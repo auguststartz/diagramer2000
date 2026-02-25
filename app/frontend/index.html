@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AWS Diagram Generator</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="panel">
+      <h1>AWS Diagram Generator</h1>
+      <p class="subtitle">Phase 1 MVP: static layout + PNG export</p>
+
+      <form id="diagram-form">
+        <label>
+          Customer Name
+          <input name="customer_name" maxlength="80" required placeholder="Acme Health System" />
+        </label>
+
+        <label>
+          AWS Region
+          <select name="region" id="region" required></select>
+        </label>
+
+        <label>
+          Production Server Count
+          <input type="number" name="production_server_count" min="1" max="20" value="2" required />
+        </label>
+
+        <label>
+          Availability Zone Count
+          <input type="number" name="availability_zone_count" min="1" max="3" value="2" required />
+        </label>
+
+        <label>
+          Non-Production Server Count
+          <input type="number" name="non_production_server_count" min="0" max="20" value="1" />
+        </label>
+
+        <label class="check-row">
+          <input type="checkbox" name="include_rds" />
+          Include Amazon RDS
+        </label>
+
+        <label class="check-row">
+          <input type="checkbox" name="include_fsx" />
+          Include Amazon FSx
+        </label>
+
+        <button type="submit">Generate PNG</button>
+      </form>
+
+      <p id="status" class="status"></p>
+    </section>
+
+    <section class="preview">
+      <h2>Preview</h2>
+      <img id="preview-image" alt="Diagram preview" />
+    </section>
+  </main>
+
+  <script>
+    const regionSelect = document.getElementById('region');
+    const form = document.getElementById('diagram-form');
+    const statusEl = document.getElementById('status');
+    const previewImage = document.getElementById('preview-image');
+
+    async function loadRegions() {
+      const res = await fetch('/api/v1/regions');
+      const data = await res.json();
+
+      for (const item of data.regions) {
+        const option = document.createElement('option');
+        option.value = item.code;
+        option.textContent = `${item.code} - ${item.name}`;
+        regionSelect.appendChild(option);
+      }
+      regionSelect.value = 'us-east-1';
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      statusEl.textContent = 'Rendering diagram...';
+
+      const formData = new FormData(form);
+      const payload = Object.fromEntries(formData.entries());
+      payload.production_server_count = Number(payload.production_server_count);
+      payload.availability_zone_count = Number(payload.availability_zone_count);
+      payload.non_production_server_count = Number(payload.non_production_server_count || 0);
+      payload.include_rds = formData.get('include_rds') === 'on';
+      payload.include_fsx = formData.get('include_fsx') === 'on';
+
+      const response = await fetch('/api/v1/diagram.png', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        statusEl.textContent = `Failed: ${response.status}`;
+        return;
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      previewImage.src = objectUrl;
+
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = `${payload.customer_name.replace(/\s+/g, '_')}_aws_architecture.png`;
+      anchor.click();
+
+      statusEl.textContent = 'PNG generated and downloaded.';
+    });
+
+    loadRegions().catch(() => {
+      statusEl.textContent = 'Failed to load regions.';
+    });
+  </script>
+</body>
+</html>
