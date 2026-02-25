@@ -29,11 +29,6 @@
         </label>
 
         <label>
-          Availability Zone Count
-          <input type="number" name="availability_zone_count" min="1" max="3" value="2" required />
-        </label>
-
-        <label>
           Non-Production Server Count
           <input type="number" name="non_production_server_count" min="0" max="20" value="1" />
         </label>
@@ -46,6 +41,11 @@
         <label class="check-row">
           <input type="checkbox" name="include_fsx" />
           Include Amazon FSx
+        </label>
+
+        <label>
+          Footer Text
+          <textarea name="footer_text" maxlength="300" rows="3">OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.</textarea>
         </label>
 
         <button type="submit">Generate PNG</button>
@@ -86,10 +86,10 @@
       const formData = new FormData(form);
       const payload = Object.fromEntries(formData.entries());
       payload.production_server_count = Number(payload.production_server_count);
-      payload.availability_zone_count = Number(payload.availability_zone_count);
       payload.non_production_server_count = Number(payload.non_production_server_count || 0);
       payload.include_rds = formData.get('include_rds') === 'on';
       payload.include_fsx = formData.get('include_fsx') === 'on';
+      payload.footer_text = formData.get('footer_text') || '';
 
       const response = await fetch('/api/v1/diagram.png', {
         method: 'POST',

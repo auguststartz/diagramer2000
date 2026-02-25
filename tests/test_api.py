@@ -26,10 +26,10 @@ def test_generate_png() -> None:
             'customer_name': 'Acme',
             'region': 'us-east-1',
             'production_server_count': 2,
-            'availability_zone_count': 2,
             'non_production_server_count': 1,
             'include_rds': True,
             'include_fsx': True,
+            'footer_text': 'Test footer text',
         },
     )
     assert response.status_code == 200
@@ -44,7 +44,6 @@ def test_reject_unknown_region() -> None:
             'customer_name': 'Acme',
             'region': 'bad-region',
             'production_server_count': 2,
-            'availability_zone_count': 2,
             'non_production_server_count': 1,
         },
     )

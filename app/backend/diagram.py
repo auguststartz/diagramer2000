@@ -249,9 +249,8 @@ def generate_png(payload: DiagramRequest) -> bytes:
             sy = stack_start_y + i * (SERVICE_NODE_HEIGHT + SERVICE_STACK_SPACING)
             _draw_service_node(image, draw, stack_x, sy, service, icon_key)
 
-    footer = f"Production servers: {payload.production_server_count} | AZs: {payload.availability_zone_count}"
     footer_y = 1020
-    draw.text((50, footer_y), footer, fill="#4B5563", font=_safe_font(24))
+    draw.text((50, footer_y), payload.footer_text, fill="#4B5563", font=_safe_font(24))
 
     output = BytesIO()
     image.save(output, format="PNG")

@@ -5,10 +5,14 @@ class DiagramRequest(BaseModel):
     customer_name: str = Field(min_length=1, max_length=80)
     region: str = Field(min_length=1)
     production_server_count: int = Field(ge=1, le=20)
-    availability_zone_count: int = Field(ge=1, le=3)
+    availability_zone_count: int = Field(default=2, ge=1, le=3)
     non_production_server_count: int = Field(ge=0, le=20, default=0)
     include_rds: bool = False
     include_fsx: bool = False
+    footer_text: str = Field(
+        default="OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.",
+        max_length=300,
+    )
 
     @field_validator("customer_name")
     @classmethod
