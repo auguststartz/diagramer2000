@@ -1,4 +1,4 @@
-from app.backend.diagram import _distribute_servers
+from app.backend.layout import _distribute_servers
 
 
 def test_distribute_servers_even_split() -> None:

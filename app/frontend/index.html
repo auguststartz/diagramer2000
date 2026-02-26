@@ -10,7 +10,7 @@
   <main class="container">
     <section class="panel">
       <h1>AWS Diagram Generator</h1>
-      <p class="subtitle">Phase 1 MVP: static layout + PNG export</p>
+      <p class="subtitle">Static layout + PNG / JPEG / PDF / Draw.io / Excalidraw export</p>
 
       <form id="diagram-form">
         <label>
@@ -93,7 +93,18 @@
           <textarea name="footer_text" maxlength="300" rows="3">OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.</textarea>
         </label>
 
-        <button type="submit">Generate PNG</button>
+        <label>
+          Export Format
+          <select name="export_format" id="export-format">
+            <option value="png">PNG</option>
+            <option value="jpg">JPEG</option>
+            <option value="pdf">PDF</option>
+            <option value="drawio">Draw.io (.drawio)</option>
+            <option value="excalidraw">Excalidraw (.excalidraw)</option>
+          </select>
+        </label>
+
+        <button type="submit">Generate</button>
       </form>
 
       <p id="status" class="status"></p>
@@ -124,8 +135,12 @@
       regionSelect.value = 'us-east-1';
     }
 
+    const formatLabels = { png: 'PNG', jpg: 'JPEG', pdf: 'PDF', drawio: 'Draw.io', excalidraw: 'Excalidraw' };
+
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+
+      const format = document.getElementById('export-format').value;
       statusEl.textContent = 'Rendering diagram...';
 
       const formData = new FormData(form);
@@ -144,8 +159,9 @@
       payload.customer_network_autoprint = formData.get('customer_network_autoprint') === 'on';
       payload.customer_network_otfaim = formData.get('customer_network_otfaim') === 'on';
       payload.footer_text = formData.get('footer_text') || '';
+      delete payload.export_format;
 
-      const response = await fetch('/api/v1/diagram.png', {
+      const response = await fetch(`/api/v1/diagram.${format}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -158,14 +174,20 @@
 
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
-      previewImage.src = objectUrl;
+      const baseName = payload.customer_name.replace(/\s+/g, '_');
+
+      if (format === 'png' || format === 'jpg') {
+        previewImage.src = objectUrl;
+      } else {
+        previewImage.src = '';
+      }
 
       const anchor = document.createElement('a');
       anchor.href = objectUrl;
-      anchor.download = `${payload.customer_name.replace(/\s+/g, '_')}_aws_architecture.png`;
+      anchor.download = `${baseName}_aws_architecture.${format}`;
       anchor.click();
 
-      statusEl.textContent = 'PNG generated and downloaded.';
+      statusEl.textContent = `${formatLabels[format]} generated and downloaded.`;
     });
 
     loadRegions().catch(() => {
