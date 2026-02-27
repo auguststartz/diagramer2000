@@ -33,6 +33,7 @@ class IRText:
     color: str
     font_size: int
     semantic_role: str
+    max_width: int = 0
 
 
 @dataclass

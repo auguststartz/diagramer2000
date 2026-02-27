@@ -115,3 +115,153 @@ def test_icons_created_for_ec2_and_services() -> None:
     icon_keys = {i.icon_key for i in icons}
     assert "ec2" in icon_keys
     assert "rds" in icon_keys
+
+
+# --- Notes section tests ---
+
+
+def test_notes_section_appears_when_services_selected() -> None:
+    ir = compute_layout(_make_request(
+        show_customer_network=True,
+        customer_network_smtp=True,
+        customer_network_exchange=True,
+    ))
+    texts = [e for e in ir.elements if isinstance(e, IRText)]
+    headings = [t for t in texts if t.semantic_role == "notes_heading"]
+    descriptions = [t for t in texts if t.semantic_role == "notes_description"]
+    service_names = [t for t in texts if t.semantic_role == "notes_service_name"]
+    assert len(headings) == 1
+    assert headings[0].text == "Notes"
+    assert len(descriptions) == 2
+    assert len(service_names) == 2
+
+
+def test_canvas_height_exceeds_default_with_many_services() -> None:
+    ir = compute_layout(_make_request(
+        show_customer_network=True,
+        customer_network_epic=True,
+        customer_network_mfp=True,
+        customer_network_smtp=True,
+        customer_network_exchange=True,
+        customer_network_directory=True,
+        customer_network_autoprint=True,
+        customer_network_otfaim=True,
+    ))
+    assert ir.canvas_height > 1080
+
+
+def test_footer_positioned_below_notes() -> None:
+    ir = compute_layout(_make_request(
+        show_customer_network=True,
+        customer_network_smtp=True,
+    ))
+    texts = [e for e in ir.elements if isinstance(e, IRText)]
+    footer = [t for t in texts if t.semantic_role == "footer"][0]
+    descriptions = [t for t in texts if t.semantic_role == "notes_description"]
+    assert len(descriptions) == 1
+    assert footer.y > descriptions[0].y
+
+
+def test_no_notes_when_no_services_selected() -> None:
+    ir = compute_layout(_make_request(show_customer_network=True))
+    texts = [e for e in ir.elements if isinstance(e, IRText)]
+    headings = [t for t in texts if t.semantic_role == "notes_heading"]
+    descriptions = [t for t in texts if t.semantic_role == "notes_description"]
+    assert len(headings) == 0
+    assert len(descriptions) == 0
+
+
+def test_no_notes_when_customer_network_disabled() -> None:
+    ir = compute_layout(_make_request(
+        show_customer_network=False,
+        customer_network_smtp=True,
+        customer_network_exchange=True,
+    ))
+    texts = [e for e in ir.elements if isinstance(e, IRText)]
+    headings = [t for t in texts if t.semantic_role == "notes_heading"]
+    descriptions = [t for t in texts if t.semantic_role == "notes_description"]
+    assert len(headings) == 0
+    assert len(descriptions) == 0
+
+
+# --- Cloud services section tests ---
+
+
+def test_cloud_services_box_and_nodes() -> None:
+    ir = compute_layout(_make_request(
+        show_cloud_services=True,
+        cloud_services_office365=True,
+        cloud_services_entra=True,
+    ))
+    rects = [e for e in ir.elements if isinstance(e, IRRect)]
+    cs_box = [r for r in rects if r.semantic_role == "cloud_services"]
+    cs_nodes = [r for r in rects if r.semantic_role == "cs_node"]
+    assert len(cs_box) == 1
+    assert cs_box[0].fill_color == "#EFF6FF"
+    assert cs_box[0].stroke_color == "#2563EB"
+    assert len(cs_nodes) == 2
+
+
+def test_cloud_services_connecting_line() -> None:
+    ir = compute_layout(_make_request(show_cloud_services=True))
+    rects = [e for e in ir.elements if isinstance(e, IRRect)]
+    region = [r for r in rects if r.semantic_role == "region"][0]
+    cs_box = [r for r in rects if r.semantic_role == "cloud_services"][0]
+    lines = [e for e in ir.elements if isinstance(e, IRLine)]
+    # Find the vertical line between region bottom and CS box top
+    connecting = [
+        ln for ln in lines
+        if ln.y1 == region.y + region.height and ln.y2 == cs_box.y
+    ]
+    assert len(connecting) == 1
+
+
+def test_no_cloud_services_when_disabled() -> None:
+    ir = compute_layout(_make_request(show_cloud_services=False))
+    rects = [e for e in ir.elements if isinstance(e, IRRect)]
+    cs_box = [r for r in rects if r.semantic_role == "cloud_services"]
+    assert len(cs_box) == 0
+
+
+def test_cloud_services_notes_appear() -> None:
+    ir = compute_layout(_make_request(
+        show_cloud_services=True,
+        cloud_services_office365=True,
+        cloud_services_hosted_epic=True,
+    ))
+    texts = [e for e in ir.elements if isinstance(e, IRText)]
+    headings = [t for t in texts if t.semantic_role == "notes_heading"]
+    descriptions = [t for t in texts if t.semantic_role == "notes_description"]
+    service_names = [t for t in texts if t.semantic_role == "notes_service_name"]
+    assert len(headings) == 1
+    assert len(descriptions) == 2
+    assert len(service_names) == 2
+    names = {t.text for t in service_names}
+    assert "Office365" in names
+    assert "Hosted EPIC" in names
+
+
+# --- CN/CS node icon tests ---
+
+
+def test_cn_nodes_have_icons() -> None:
+    ir = compute_layout(_make_request(
+        show_customer_network=True,
+        customer_network_epic=True,
+        customer_network_smtp=True,
+        customer_network_exchange=True,
+    ))
+    icons = [e for e in ir.elements if isinstance(e, IRIcon)]
+    cn_icon_keys = {i.icon_key for i in icons if i.icon_key in ("epic", "smtp", "exchange")}
+    assert cn_icon_keys == {"epic", "smtp", "exchange"}
+
+
+def test_cs_nodes_have_icons() -> None:
+    ir = compute_layout(_make_request(
+        show_cloud_services=True,
+        cloud_services_office365=True,
+        cloud_services_entra=True,
+    ))
+    icons = [e for e in ir.elements if isinstance(e, IRIcon)]
+    cs_icon_keys = {i.icon_key for i in icons if i.icon_key in ("office365", "entra")}
+    assert cs_icon_keys == {"office365", "entra"}

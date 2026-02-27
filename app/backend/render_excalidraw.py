@@ -3,22 +3,47 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import textwrap
 from pathlib import Path
 
 from .ir import DiagramIR, IRDot, IRIcon, IRLine, IRRect, IRText
 
 ICON_ROOT = Path("app/icons/aws")
+ICON_ROOT_ONPREM = Path("app/icons/onprem")
+ICON_ROOT_CLOUD = Path("app/icons/cloud")
+ALL_ICON_ROOTS = [ICON_ROOT, ICON_ROOT_ONPREM, ICON_ROOT_CLOUD]
+
 ICON_MAP = {
     "ec2": ICON_ROOT / "ec2.png",
     "rds": ICON_ROOT / "rds.png",
     "fsx": ICON_ROOT / "fsx.png",
     "vpn": ICON_ROOT / "vpn.png",
+    "epic": ICON_ROOT_ONPREM / "epic.png",
+    "mfp": ICON_ROOT_ONPREM / "mfp.png",
+    "smtp": ICON_ROOT_ONPREM / "smtp.png",
+    "exchange": ICON_ROOT_ONPREM / "exchange.png",
+    "directory": ICON_ROOT_ONPREM / "directory.png",
+    "autoprint": ICON_ROOT_ONPREM / "autoprint.png",
+    "otfaim": ICON_ROOT_ONPREM / "otfaim.png",
+    "office365": ICON_ROOT_CLOUD / "office365.png",
+    "hosted_epic": ICON_ROOT_CLOUD / "hosted_epic.png",
+    "entra": ICON_ROOT_CLOUD / "entra.png",
 }
 ICON_KEYWORDS = {
     "ec2": ("ec2", "elastic-compute-cloud"),
     "rds": ("rds", "relational-database"),
     "fsx": ("fsx", "file-system"),
     "vpn": ("vpn", "transit-gateway", "virtual-private-network"),
+    "epic": ("epic",),
+    "mfp": ("mfp", "multifunction"),
+    "smtp": ("smtp", "email"),
+    "exchange": ("exchange",),
+    "directory": ("directory", "ldap", "active-directory"),
+    "autoprint": ("autoprint", "print"),
+    "otfaim": ("otfaim",),
+    "office365": ("office365", "o365"),
+    "hosted_epic": ("hosted_epic", "hosted-epic"),
+    "entra": ("entra", "azure-ad"),
 }
 
 
@@ -28,7 +53,9 @@ def _resolve_icon_path(icon_key: str) -> Path | None:
         return mapped
     keywords = ICON_KEYWORDS.get(icon_key, ())
     candidates = sorted(
-        p for p in ICON_ROOT.rglob("*")
+        p
+        for root in ALL_ICON_ROOTS
+        for p in (root.rglob("*") if root.exists() else [])
         if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg"}
     )
     for c in candidates:
@@ -51,7 +78,7 @@ def _load_icon_b64(icon_key: str) -> tuple[str, str] | None:
 
 
 # Map parent_id -> group ID for grouping children together
-_CONTAINER_ROLES = {"region", "az", "customer_network", "non_production", "service_column"}
+_CONTAINER_ROLES = {"region", "az", "customer_network", "non_production", "service_column", "cloud_services"}
 
 
 def render_to_excalidraw(ir: DiagramIR) -> bytes:
@@ -122,9 +149,9 @@ def render_to_excalidraw(ir: DiagramIR) -> bytes:
                 elements.append(rect_elem)
 
                 # Bound text element
-                if elem.semantic_role == "cn_node":
+                if elem.semantic_role in ("cn_node", "cs_node"):
                     tx = elem.x + elem.width // 2
-                    ty = elem.y + elem.height // 2
+                    ty = elem.y + elem.label_y_offset if elem.label_y_offset >= 0 else elem.y + elem.height // 2
                 elif elem.semantic_role == "service_node":
                     tx = elem.x + elem.label_x_offset
                     ty = elem.y + elem.label_y_offset
@@ -153,8 +180,8 @@ def render_to_excalidraw(ir: DiagramIR) -> bytes:
                     "text": elem.label,
                     "fontSize": elem.label_font_size,
                     "fontFamily": 1,
-                    "textAlign": "center" if elem.semantic_role == "cn_node" else "left",
-                    "verticalAlign": "middle" if elem.semantic_role == "cn_node" else "top",
+                    "textAlign": "center" if elem.semantic_role in ("cn_node", "cs_node") else "left",
+                    "verticalAlign": "middle" if elem.semantic_role in ("cn_node", "cs_node") else "top",
                     "containerId": rect_id,
                     "boundElements": [],
                     "locked": False,
@@ -167,8 +194,18 @@ def render_to_excalidraw(ir: DiagramIR) -> bytes:
 
         elif isinstance(elem, IRText):
             group_ids = []
-            text_width = max(len(elem.text) * elem.font_size * 6 // 10, 30)
-            text_height = elem.font_size + 8
+            if elem.max_width > 0:
+                char_width = elem.font_size * 0.6
+                chars_per_line = max(1, int(elem.max_width / char_width))
+                wrapped_lines = textwrap.wrap(elem.text, width=chars_per_line)
+                display_text = "\n".join(wrapped_lines) if wrapped_lines else elem.text
+                line_height = int(elem.font_size * 1.4)
+                text_width = elem.max_width
+                text_height = max(line_height, len(wrapped_lines) * line_height)
+            else:
+                display_text = elem.text
+                text_width = max(len(elem.text) * elem.font_size * 6 // 10, 30)
+                text_height = elem.font_size + 8
             elements.append({
                 "id": _next_id(),
                 "type": "text",
@@ -184,7 +221,7 @@ def render_to_excalidraw(ir: DiagramIR) -> bytes:
                 "roughness": 0,
                 "opacity": 100,
                 "groupIds": group_ids,
-                "text": elem.text,
+                "text": display_text,
                 "fontSize": elem.font_size,
                 "fontFamily": 1,
                 "textAlign": "left",

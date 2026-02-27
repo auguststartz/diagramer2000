@@ -1,198 +1,284 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AWS Diagram Generator</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-  <main class="container">
-    <section class="panel">
-      <h1>AWS Diagram Generator</h1>
-      <p class="subtitle">Static layout + PNG / JPEG / PDF / Draw.io / Excalidraw export</p>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>PC Diagram Generator</title>
+        <link rel="stylesheet" href="/static/styles.css" />
+    </head>
+    <body>
+        <main class="container">
+            <section class="panel">
+                <h1>PC Diagram Generator</h1>
+                <p class="subtitle">
+                    Static layout + PNG / JPEG / PDF / Draw.io / Excalidraw
+                    export
+                </p>
 
-      <form id="diagram-form">
-        <label>
-          Customer Name
-          <input name="customer_name" maxlength="80" required placeholder="Acme Health System" />
-        </label>
+                <form id="diagram-form">
+                    <label>
+                        Customer Name
+                        <input
+                            name="customer_name"
+                            maxlength="80"
+                            required
+                            placeholder="Acme Health System"
+                        />
+                    </label>
 
-        <label>
-          AWS Region
-          <select name="region" id="region" required></select>
-        </label>
+                    <label>
+                        AWS Region
+                        <select name="region" id="region" required></select>
+                    </label>
 
-        <label>
-          Production Server Count
-          <input type="number" name="production_server_count" min="1" max="20" value="2" required />
-        </label>
+                    <label>
+                        Production Server Count
+                        <input
+                            type="number"
+                            name="production_server_count"
+                            min="1"
+                            max="20"
+                            value="2"
+                            required
+                        />
+                    </label>
 
-        <label>
-          Non-Production Server Count
-          <input type="number" name="non_production_server_count" min="0" max="20" value="1" />
-        </label>
+                    <label>
+                        Non-Production Server Count
+                        <input
+                            type="number"
+                            name="non_production_server_count"
+                            min="0"
+                            max="20"
+                            value="1"
+                        />
+                    </label>
 
-        <label class="check-row">
-          <input type="checkbox" name="include_rds" />
-          Include Amazon RDS
-        </label>
+                    <label class="check-row">
+                        <input type="checkbox" name="include_rds" />
+                        Include Amazon RDS
+                    </label>
 
-        <label class="check-row">
-          <input type="checkbox" name="include_fsx" />
-          Include Amazon FSx
-        </label>
+                    <label class="check-row">
+                        <input type="checkbox" name="include_fsx" />
+                        Include Amazon FSx
+                    </label>
 
-        <label class="check-row">
-          <input type="checkbox" name="include_vpn" />
-          Include AWS Transit VPN
-        </label>
+                    <label class="check-row">
+                        <input type="checkbox" name="include_vpn" />
+                        Include AWS Transit VPN
+                    </label>
 
-        <label class="check-row">
-          <input type="checkbox" name="show_customer_network" />
-          Show Customer Network
-        </label>
+                    <label class="check-row">
+                        <input type="checkbox" name="show_customer_network" />
+                        Show Customer Network
+                    </label>
 
-        <label class="check-row" style="margin-left: 24px;">
-          <input type="checkbox" name="customer_network_epic" />
-          EPIC
-        </label>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input type="checkbox" name="customer_network_epic" />
+                        EPIC
+                    </label>
 
-        <label class="check-row" style="margin-left: 24px;">
-          <input type="checkbox" name="customer_network_mfp" />
-          MFP
-        </label>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input type="checkbox" name="customer_network_mfp" />
+                        MFP
+                    </label>
 
-        <label class="check-row" style="margin-left: 24px;">
-          <input type="checkbox" name="customer_network_smtp" />
-          SMTP
-        </label>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input type="checkbox" name="customer_network_smtp" />
+                        SMTP
+                    </label>
 
-        <label class="check-row" style="margin-left: 24px;">
-          <input type="checkbox" name="customer_network_exchange" />
-          Exchange
-        </label>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input
+                            type="checkbox"
+                            name="customer_network_exchange"
+                        />
+                        Exchange
+                    </label>
 
-        <label class="check-row" style="margin-left: 24px;">
-          <input type="checkbox" name="customer_network_directory" />
-          Network Directory
-        </label>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input
+                            type="checkbox"
+                            name="customer_network_directory"
+                        />
+                        Network Directory
+                    </label>
 
-        <label class="check-row" style="margin-left: 24px;">
-          <input type="checkbox" name="customer_network_autoprint" />
-          AutoPrint
-        </label>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input
+                            type="checkbox"
+                            name="customer_network_autoprint"
+                        />
+                        AutoPrint
+                    </label>
 
-        <label class="check-row" style="margin-left: 24px;">
-          <input type="checkbox" name="customer_network_otfaim" />
-          OTFAIM
-        </label>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input type="checkbox" name="customer_network_otfaim" />
+                        OTFAIM
+                    </label>
 
-        <label>
-          Footer Text
-          <textarea name="footer_text" maxlength="300" rows="3">OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.</textarea>
-        </label>
+                    <label class="check-row">
+                        <input type="checkbox" name="show_cloud_services" />
+                        Show Cloud Services
+                    </label>
 
-        <label>
-          Export Format
-          <select name="export_format" id="export-format">
-            <option value="png">PNG</option>
-            <option value="jpg">JPEG</option>
-            <option value="pdf">PDF</option>
-            <option value="drawio">Draw.io (.drawio)</option>
-            <option value="excalidraw">Excalidraw (.excalidraw)</option>
-          </select>
-        </label>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input
+                            type="checkbox"
+                            name="cloud_services_office365"
+                        />
+                        Office365
+                    </label>
 
-        <button type="submit">Generate</button>
-      </form>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input
+                            type="checkbox"
+                            name="cloud_services_hosted_epic"
+                        />
+                        Hosted EPIC
+                    </label>
 
-      <p id="status" class="status"></p>
-    </section>
+                    <label class="check-row" style="margin-left: 24px">
+                        <input type="checkbox" name="cloud_services_entra" />
+                        Entra
+                    </label>
 
-    <section class="preview">
-      <h2>Preview</h2>
-      <img id="preview-image" alt="Diagram preview" />
-    </section>
-  </main>
+                    <label>
+                        Footer Text
+                        <textarea name="footer_text" maxlength="300" rows="3">
+OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.</textarea
+                        >
+                    </label>
 
-  <script>
-    const regionSelect = document.getElementById('region');
-    const form = document.getElementById('diagram-form');
-    const statusEl = document.getElementById('status');
-    const previewImage = document.getElementById('preview-image');
+                    <label>
+                        Export Format
+                        <select name="export_format" id="export-format">
+                            <option value="png">PNG</option>
+                            <option value="jpg">JPEG</option>
+                            <option value="pdf">PDF</option>
+                            <option value="drawio">Draw.io (.drawio)</option>
+                            <option value="excalidraw">
+                                Excalidraw (.excalidraw)
+                            </option>
+                        </select>
+                    </label>
 
-    async function loadRegions() {
-      const res = await fetch('/api/v1/regions');
-      const data = await res.json();
+                    <button type="submit">Generate</button>
+                </form>
 
-      for (const item of data.regions) {
-        const option = document.createElement('option');
-        option.value = item.code;
-        option.textContent = `${item.code} - ${item.name}`;
-        regionSelect.appendChild(option);
-      }
-      regionSelect.value = 'us-east-1';
-    }
+                <p id="status" class="status"></p>
+            </section>
 
-    const formatLabels = { png: 'PNG', jpg: 'JPEG', pdf: 'PDF', drawio: 'Draw.io', excalidraw: 'Excalidraw' };
+            <section class="preview">
+                <h2>Preview</h2>
+                <img id="preview-image" alt="Diagram preview" />
+            </section>
+        </main>
 
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
+        <script>
+            const regionSelect = document.getElementById("region");
+            const form = document.getElementById("diagram-form");
+            const statusEl = document.getElementById("status");
+            const previewImage = document.getElementById("preview-image");
 
-      const format = document.getElementById('export-format').value;
-      statusEl.textContent = 'Rendering diagram...';
+            async function loadRegions() {
+                const res = await fetch("/api/v1/regions");
+                const data = await res.json();
 
-      const formData = new FormData(form);
-      const payload = Object.fromEntries(formData.entries());
-      payload.production_server_count = Number(payload.production_server_count);
-      payload.non_production_server_count = Number(payload.non_production_server_count || 0);
-      payload.include_rds = formData.get('include_rds') === 'on';
-      payload.include_fsx = formData.get('include_fsx') === 'on';
-      payload.include_vpn = formData.get('include_vpn') === 'on';
-      payload.show_customer_network = formData.get('show_customer_network') === 'on';
-      payload.customer_network_epic = formData.get('customer_network_epic') === 'on';
-      payload.customer_network_mfp = formData.get('customer_network_mfp') === 'on';
-      payload.customer_network_smtp = formData.get('customer_network_smtp') === 'on';
-      payload.customer_network_exchange = formData.get('customer_network_exchange') === 'on';
-      payload.customer_network_directory = formData.get('customer_network_directory') === 'on';
-      payload.customer_network_autoprint = formData.get('customer_network_autoprint') === 'on';
-      payload.customer_network_otfaim = formData.get('customer_network_otfaim') === 'on';
-      payload.footer_text = formData.get('footer_text') || '';
-      delete payload.export_format;
+                for (const item of data.regions) {
+                    const option = document.createElement("option");
+                    option.value = item.code;
+                    option.textContent = `${item.code} - ${item.name}`;
+                    regionSelect.appendChild(option);
+                }
+                regionSelect.value = "us-east-1";
+            }
 
-      const response = await fetch(`/api/v1/diagram.${format}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+            const formatLabels = {
+                png: "PNG",
+                jpg: "JPEG",
+                pdf: "PDF",
+                drawio: "Draw.io",
+                excalidraw: "Excalidraw",
+            };
 
-      if (!response.ok) {
-        statusEl.textContent = `Failed: ${response.status}`;
-        return;
-      }
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
 
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const baseName = payload.customer_name.replace(/\s+/g, '_');
+                const format = document.getElementById("export-format").value;
+                statusEl.textContent = "Rendering diagram...";
 
-      if (format === 'png' || format === 'jpg') {
-        previewImage.src = objectUrl;
-      } else {
-        previewImage.src = '';
-      }
+                const formData = new FormData(form);
+                const payload = Object.fromEntries(formData.entries());
+                payload.production_server_count = Number(
+                    payload.production_server_count,
+                );
+                payload.non_production_server_count = Number(
+                    payload.non_production_server_count || 0,
+                );
+                payload.include_rds = formData.get("include_rds") === "on";
+                payload.include_fsx = formData.get("include_fsx") === "on";
+                payload.include_vpn = formData.get("include_vpn") === "on";
+                payload.show_customer_network =
+                    formData.get("show_customer_network") === "on";
+                payload.customer_network_epic =
+                    formData.get("customer_network_epic") === "on";
+                payload.customer_network_mfp =
+                    formData.get("customer_network_mfp") === "on";
+                payload.customer_network_smtp =
+                    formData.get("customer_network_smtp") === "on";
+                payload.customer_network_exchange =
+                    formData.get("customer_network_exchange") === "on";
+                payload.customer_network_directory =
+                    formData.get("customer_network_directory") === "on";
+                payload.customer_network_autoprint =
+                    formData.get("customer_network_autoprint") === "on";
+                payload.customer_network_otfaim =
+                    formData.get("customer_network_otfaim") === "on";
+                payload.show_cloud_services =
+                    formData.get("show_cloud_services") === "on";
+                payload.cloud_services_office365 =
+                    formData.get("cloud_services_office365") === "on";
+                payload.cloud_services_hosted_epic =
+                    formData.get("cloud_services_hosted_epic") === "on";
+                payload.cloud_services_entra =
+                    formData.get("cloud_services_entra") === "on";
+                payload.footer_text = formData.get("footer_text") || "";
+                delete payload.export_format;
 
-      const anchor = document.createElement('a');
-      anchor.href = objectUrl;
-      anchor.download = `${baseName}_aws_architecture.${format}`;
-      anchor.click();
+                const response = await fetch(`/api/v1/diagram.${format}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
 
-      statusEl.textContent = `${formatLabels[format]} generated and downloaded.`;
-    });
+                if (!response.ok) {
+                    statusEl.textContent = `Failed: ${response.status}`;
+                    return;
+                }
 
-    loadRegions().catch(() => {
-      statusEl.textContent = 'Failed to load regions.';
-    });
-  </script>
-</body>
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                const baseName = payload.customer_name.replace(/\s+/g, "_");
+
+                if (format === "png" || format === "jpg") {
+                    previewImage.src = objectUrl;
+                } else {
+                    previewImage.src = "";
+                }
+
+                const anchor = document.createElement("a");
+                anchor.href = objectUrl;
+                anchor.download = `${baseName}_aws_architecture.${format}`;
+                anchor.click();
+
+                statusEl.textContent = `${formatLabels[format]} generated and downloaded.`;
+            });
+
+            loadRegions().catch(() => {
+                statusEl.textContent = "Failed to load regions.";
+            });
+        </script>
+    </body>
 </html>

@@ -18,6 +18,10 @@ class DiagramRequest(BaseModel):
     customer_network_directory: bool = False
     customer_network_autoprint: bool = False
     customer_network_otfaim: bool = False
+    show_cloud_services: bool = False
+    cloud_services_office365: bool = False
+    cloud_services_hosted_epic: bool = False
+    cloud_services_entra: bool = False
     footer_text: str = Field(
         default="OpenText Fax Private Claude Production Environments are a pair of RightFax servers. Edit this text later with something more useful.",
         max_length=300,

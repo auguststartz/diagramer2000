@@ -28,13 +28,30 @@ _ROLE_STYLES: dict[str, str] = {
         "rounded=1;arcSize=6;verticalAlign=top;align=left;spacingLeft=10;"
         "dashed=0;"
     ),
+    "cloud_services": (
+        "rounded=1;arcSize=6;verticalAlign=top;align=left;spacingLeft=10;"
+        "dashed=0;"
+    ),
 }
+
+_ONPREM_ICON_STYLE = "rounded=1;arcSize=12;fillColor=#F0FDF4;strokeColor=#16A34A;"
+_CLOUD_ICON_STYLE = "rounded=1;arcSize=12;fillColor=#EFF6FF;strokeColor=#2563EB;"
 
 _SERVICE_ICON_STYLES: dict[str, str] = {
     "ec2": "shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ec2;",
     "rds": "shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.rds;",
     "fsx": "shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.fsx;",
     "vpn": "shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.transit_gateway;",
+    "epic": _ONPREM_ICON_STYLE,
+    "mfp": _ONPREM_ICON_STYLE,
+    "smtp": _ONPREM_ICON_STYLE,
+    "exchange": _ONPREM_ICON_STYLE,
+    "directory": _ONPREM_ICON_STYLE,
+    "autoprint": _ONPREM_ICON_STYLE,
+    "otfaim": _ONPREM_ICON_STYLE,
+    "office365": _CLOUD_ICON_STYLE,
+    "hosted_epic": _CLOUD_ICON_STYLE,
+    "entra": _CLOUD_ICON_STYLE,
 }
 
 
@@ -92,7 +109,7 @@ def render_to_drawio(ir: DiagramIR) -> bytes:
 
             parent_cell = _find_parent_cell(elem.id, elem.parent_id, id_map)
             is_container = elem.semantic_role in (
-                "region", "az", "customer_network", "non_production", "service_column",
+                "region", "az", "customer_network", "non_production", "service_column", "cloud_services",
             )
 
             # Compute position relative to parent container
@@ -132,11 +149,26 @@ def render_to_drawio(ir: DiagramIR) -> bytes:
             cid = next_cell_id()
             id_map[elem.id] = cid
 
-            style = (
-                f"text;html=1;resizable=0;autosize=1;align=left;verticalAlign=middle;"
-                f"fontSize={elem.font_size};fontColor={elem.color};"
-                f"fillColor=none;strokeColor=none;"
-            )
+            if elem.max_width > 0:
+                style = (
+                    f"text;html=1;whiteSpace=wrap;overflow=visible;"
+                    f"align=left;verticalAlign=top;"
+                    f"fontSize={elem.font_size};fontColor={elem.color};"
+                    f"fillColor=none;strokeColor=none;"
+                )
+                text_width = elem.max_width
+                # Estimate height: ~0.6 char width heuristic
+                chars_per_line = max(1, int(elem.max_width / (elem.font_size * 0.6)))
+                num_lines = max(1, -(-len(elem.text) // chars_per_line))  # ceil div
+                text_height = num_lines * int(elem.font_size * 1.4) + 10
+            else:
+                style = (
+                    f"text;html=1;resizable=0;autosize=1;align=left;verticalAlign=middle;"
+                    f"fontSize={elem.font_size};fontColor={elem.color};"
+                    f"fillColor=none;strokeColor=none;"
+                )
+                text_width = max(len(elem.text) * elem.font_size // 2, 40)
+                text_height = elem.font_size + 10
 
             cell = ET.SubElement(mxroot, "mxCell", {
                 "id": cid,
@@ -147,8 +179,8 @@ def render_to_drawio(ir: DiagramIR) -> bytes:
             })
             ET.SubElement(cell, "mxGeometry", {
                 "x": str(elem.x), "y": str(elem.y),
-                "width": str(max(len(elem.text) * elem.font_size // 2, 40)),
-                "height": str(elem.font_size + 10),
+                "width": str(text_width),
+                "height": str(text_height),
                 "as": "geometry",
             })
 

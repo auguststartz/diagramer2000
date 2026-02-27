@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import textwrap
 from math import ceil
 
 from .ir import DiagramIR, IRDot, IRIcon, IRLine, IRRect, IRText
@@ -8,11 +9,67 @@ from .models import DiagramRequest
 CANVAS_WIDTH = 1920
 CANVAS_HEIGHT = 1080
 
+SERVICE_DESCRIPTIONS: dict[str, tuple[str, str]] = {
+    "customer_network_epic": (
+        "EPIC",
+        "Integration with the EPIC electronic health record system for automated fax delivery of patient documents, referrals, and lab results directly from clinical workflows.",
+    ),
+    "customer_network_mfp": (
+        "MFP",
+        "Multifunction printer integration enabling scan-to-fax workflows. Physical MFP devices on the customer network route scanned documents through RightFax for outbound delivery.",
+    ),
+    "customer_network_smtp": (
+        "SMTP",
+        "Email-to-fax gateway allowing users to send faxes by composing an email with attachments. The SMTP connector converts inbound emails into outbound fax transmissions.",
+    ),
+    "customer_network_exchange": (
+        "Exchange",
+        "Microsoft Exchange integration providing native fax functionality within Outlook. Users can send and receive faxes as email messages with full tracking and delivery receipts.",
+    ),
+    "customer_network_directory": (
+        "Network Directory",
+        "LDAP/Active Directory integration for centralized user provisioning and authentication. Fax routing rules and permissions are synchronized from the corporate directory.",
+    ),
+    "customer_network_autoprint": (
+        "AutoPrint",
+        "Automated print-to-fax routing that captures documents from designated print queues and submits them as fax jobs without manual intervention.",
+    ),
+    "customer_network_otfaim": (
+        "OTFAIM",
+        "OpenText Fax Appliance for Intelligent Mail provides intelligent document capture and routing, converting inbound faxes into structured data for downstream business processes.",
+    ),
+    "cloud_services_office365": (
+        "Office365",
+        "Microsoft Office 365 cloud integration enabling fax delivery and receipt through Exchange Online, SharePoint, and Teams connectors for seamless enterprise communication.",
+    ),
+    "cloud_services_hosted_epic": (
+        "Hosted EPIC",
+        "Cloud-hosted EPIC electronic health record integration providing automated fax workflows for patient documents, referrals, and clinical results via the hosted EPIC environment.",
+    ),
+    "cloud_services_entra": (
+        "Entra",
+        "Microsoft Entra ID (formerly Azure AD) integration for cloud-based identity and access management, providing single sign-on and conditional access policies for fax services.",
+    ),
+}
+
+NOTES_LEFT_MARGIN = 80
+NOTES_RIGHT_MARGIN = 80
+NOTES_TEXT_WIDTH = CANVAS_WIDTH - NOTES_LEFT_MARGIN - NOTES_RIGHT_MARGIN
+
 CENTER_COL_WIDTH = 240
 CENTER_COL_GAP = 16
 SERVICE_NODE_WIDTH = 190
 SERVICE_NODE_HEIGHT = 86
 SERVICE_STACK_SPACING = 24
+
+
+def _estimate_wrapped_text_height(text: str, max_width: int, font_size: int) -> int:
+    """Estimate pixel height of wrapped text using a character-width heuristic."""
+    char_width = font_size * 0.6
+    chars_per_line = max(1, int(max_width / char_width))
+    lines = textwrap.wrap(text, width=chars_per_line)
+    line_height = int(font_size * 1.4)
+    return max(line_height, len(lines) * line_height)
 
 
 def _distribute_servers(total_servers: int, az_count: int) -> list[int]:
@@ -52,30 +109,30 @@ def compute_layout(payload: DiagramRequest) -> DiagramIR:
             parent_id=None, semantic_role="customer_network",
         ))
 
-        cn_nodes: list[tuple[str, str]] = []
+        cn_nodes: list[tuple[str, str, str]] = []
         if payload.customer_network_epic:
-            cn_nodes.append(("EPIC", "#16A34A"))
+            cn_nodes.append(("EPIC", "#16A34A", "epic"))
         if payload.customer_network_mfp:
-            cn_nodes.append(("MFP", "#16A34A"))
+            cn_nodes.append(("MFP", "#16A34A", "mfp"))
         if payload.customer_network_smtp:
-            cn_nodes.append(("SMTP", "#16A34A"))
+            cn_nodes.append(("SMTP", "#16A34A", "smtp"))
         if payload.customer_network_exchange:
-            cn_nodes.append(("Exchange", "#16A34A"))
+            cn_nodes.append(("Exchange", "#16A34A", "exchange"))
         if payload.customer_network_directory:
-            cn_nodes.append(("Network Directory", "#16A34A"))
+            cn_nodes.append(("Network Directory", "#16A34A", "directory"))
         if payload.customer_network_autoprint:
-            cn_nodes.append(("AutoPrint", "#16A34A"))
+            cn_nodes.append(("AutoPrint", "#16A34A", "autoprint"))
         if payload.customer_network_otfaim:
-            cn_nodes.append(("OTFAIM", "#111827"))
+            cn_nodes.append(("OTFAIM", "#111827", "otfaim"))
 
         if cn_nodes:
-            node_w, node_h = 150, 80
+            node_w, node_h = 150, 100
             node_gap = 20
             total_w = len(cn_nodes) * node_w + (len(cn_nodes) - 1) * node_gap
             start_x = cn_box[0] + (cn_box[2] - cn_box[0] - total_w) // 2
             node_y = cn_box[1] + (cn_box[3] - cn_box[1] - node_h) // 2
 
-            for i, (label, color) in enumerate(cn_nodes):
+            for i, (label, color, icon_key) in enumerate(cn_nodes):
                 nx = start_x + i * (node_w + node_gap)
                 ir.elements.append(IRRect(
                     id=_next_id(ctr), x=nx, y=node_y,
@@ -83,8 +140,16 @@ def compute_layout(payload: DiagramRequest) -> DiagramIR:
                     stroke_width=2, fill_color="#F0FDF4",
                     stroke_color=color, label=label,
                     label_color=color, label_font_size=22,
-                    label_x_offset=-1, label_y_offset=-1,  # -1 signals "center"
+                    label_x_offset=-1, label_y_offset=52,
                     parent_id=cn_id, semantic_role="cn_node",
+                ))
+
+                icon_sz = 36
+                icon_x = nx + (node_w - icon_sz) // 2
+                icon_y = node_y + 8
+                ir.elements.append(IRIcon(
+                    id=_next_id(ctr), x=icon_x, y=icon_y,
+                    width=icon_sz, height=icon_sz, icon_key=icon_key,
                 ))
 
         line_x = (cn_box[0] + cn_box[2]) // 2
@@ -433,11 +498,140 @@ def compute_layout(payload: DiagramRequest) -> DiagramIR:
                 width=52, height=52, icon_key=icon_key,
             ))
 
+    # Cloud services section
+    cs_box_bottom = region_box[3]
+    if payload.show_cloud_services:
+        cs_gap = 30
+        cs_height = 150
+        cs_x0 = region_box[0]
+        cs_x1 = region_box[2]
+        cs_y0 = region_box[3] + cs_gap
+        cs_y1 = cs_y0 + cs_height
+
+        cs_id = _next_id(ctr)
+        ir.elements.append(IRRect(
+            id=cs_id, x=cs_x0, y=cs_y0,
+            width=cs_x1 - cs_x0, height=cs_y1 - cs_y0,
+            radius=14, stroke_width=3, fill_color="#EFF6FF",
+            stroke_color="#2563EB", label="Cloud Services",
+            label_color="#111827", label_font_size=26,
+            label_x_offset=16, label_y_offset=12,
+            parent_id=None, semantic_role="cloud_services",
+        ))
+
+        cs_nodes: list[tuple[str, str, str]] = []
+        if payload.cloud_services_office365:
+            cs_nodes.append(("Office365", "#2563EB", "office365"))
+        if payload.cloud_services_hosted_epic:
+            cs_nodes.append(("Hosted EPIC", "#2563EB", "hosted_epic"))
+        if payload.cloud_services_entra:
+            cs_nodes.append(("Entra", "#2563EB", "entra"))
+
+        if cs_nodes:
+            node_w, node_h = 150, 100
+            node_gap = 20
+            total_w = len(cs_nodes) * node_w + (len(cs_nodes) - 1) * node_gap
+            start_x = cs_x0 + (cs_x1 - cs_x0 - total_w) // 2
+            node_y = cs_y0 + (cs_y1 - cs_y0 - node_h) // 2
+
+            for i, (label, color, icon_key) in enumerate(cs_nodes):
+                nx = start_x + i * (node_w + node_gap)
+                ir.elements.append(IRRect(
+                    id=_next_id(ctr), x=nx, y=node_y,
+                    width=node_w, height=node_h, radius=10,
+                    stroke_width=2, fill_color="#EFF6FF",
+                    stroke_color=color, label=label,
+                    label_color=color, label_font_size=22,
+                    label_x_offset=-1, label_y_offset=52,
+                    parent_id=cs_id, semantic_role="cs_node",
+                ))
+
+                icon_sz = 36
+                icon_x = nx + (node_w - icon_sz) // 2
+                icon_y = node_y + 8
+                ir.elements.append(IRIcon(
+                    id=_next_id(ctr), x=icon_x, y=icon_y,
+                    width=icon_sz, height=icon_sz, icon_key=icon_key,
+                ))
+
+        # Connecting line from region box bottom to cloud services box top
+        line_x = (region_box[0] + region_box[2]) // 2
+        line_y_top = region_box[3]
+        line_y_bottom = cs_y0
+        dot_r = 4
+        ir.elements.append(IRLine(
+            id=_next_id(ctr), x1=line_x, y1=line_y_top,
+            x2=line_x, y2=line_y_bottom,
+            color="#1F2937", width=2,
+        ))
+        ir.elements.append(IRDot(
+            id=_next_id(ctr), cx=line_x, cy=line_y_top, radius=dot_r, color="#1F2937",
+        ))
+        ir.elements.append(IRDot(
+            id=_next_id(ctr), cx=line_x, cy=line_y_bottom, radius=dot_r, color="#1F2937",
+        ))
+
+        cs_box_bottom = cs_y1
+
+    # Notes section
+    notes_y = cs_box_bottom + 30  # start below the cloud services box (or region box)
+
+    if payload.show_customer_network or payload.show_cloud_services:
+        selected_services: list[tuple[str, str]] = []
+        for key, (display_name, description) in SERVICE_DESCRIPTIONS.items():
+            if getattr(payload, key, False):
+                selected_services.append((display_name, description))
+
+        if selected_services:
+            # "Notes" heading
+            ir.elements.append(IRText(
+                id=_next_id(ctr), x=NOTES_LEFT_MARGIN, y=notes_y,
+                text="Notes", color="#111827", font_size=30,
+                semantic_role="notes_heading",
+            ))
+            notes_y += 40
+
+            # Horizontal rule
+            ir.elements.append(IRLine(
+                id=_next_id(ctr),
+                x1=NOTES_LEFT_MARGIN, y1=notes_y,
+                x2=CANVAS_WIDTH - NOTES_RIGHT_MARGIN, y2=notes_y,
+                color="#D1D5DB", width=2,
+            ))
+            notes_y += 20
+
+            desc_font_size = 16
+            name_font_size = 18
+
+            for display_name, description in selected_services:
+                # Bold service name
+                ir.elements.append(IRText(
+                    id=_next_id(ctr), x=NOTES_LEFT_MARGIN, y=notes_y,
+                    text=display_name, color="#111827",
+                    font_size=name_font_size, semantic_role="notes_service_name",
+                ))
+                notes_y += int(name_font_size * 1.6)
+
+                # Wrapped description paragraph
+                desc_height = _estimate_wrapped_text_height(
+                    description, NOTES_TEXT_WIDTH, desc_font_size,
+                )
+                ir.elements.append(IRText(
+                    id=_next_id(ctr), x=NOTES_LEFT_MARGIN, y=notes_y,
+                    text=description, color="#4B5563",
+                    font_size=desc_font_size, semantic_role="notes_description",
+                    max_width=NOTES_TEXT_WIDTH,
+                ))
+                notes_y += desc_height + 16  # gap between service entries
+
     # Footer
+    footer_y = max(1020, notes_y + 20)
     ir.elements.append(IRText(
-        id=_next_id(ctr), x=50, y=1020,
+        id=_next_id(ctr), x=50, y=footer_y,
         text=payload.footer_text, color="#4B5563",
         font_size=24, semantic_role="footer",
     ))
+
+    ir.canvas_height = max(CANVAS_HEIGHT, footer_y + 60)
 
     return ir
