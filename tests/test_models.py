@@ -91,3 +91,26 @@ def test_include_vpn_default() -> None:
         production_server_count=2,
     )
     assert payload.include_vpn is False
+
+
+def test_cloud_services_defaults_and_okta_toggle() -> None:
+    payload = DiagramRequest(
+        customer_name="Acme",
+        region="us-east-1",
+        production_server_count=2,
+    )
+    assert payload.show_cloud_services is False
+    assert payload.cloud_services_office365 is False
+    assert payload.cloud_services_hosted_epic is False
+    assert payload.cloud_services_entra is False
+    assert payload.cloud_services_okta is False
+
+    payload_on = DiagramRequest(
+        customer_name="Acme",
+        region="us-east-1",
+        production_server_count=2,
+        show_cloud_services=True,
+        cloud_services_okta=True,
+    )
+    assert payload_on.show_cloud_services is True
+    assert payload_on.cloud_services_okta is True

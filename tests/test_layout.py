@@ -241,6 +241,16 @@ def test_cloud_services_notes_appear() -> None:
     assert "Hosted EPIC" in names
 
 
+def test_cloud_services_okta_note_appears() -> None:
+    ir = compute_layout(_make_request(
+        show_cloud_services=True,
+        cloud_services_okta=True,
+    ))
+    texts = [e for e in ir.elements if isinstance(e, IRText)]
+    service_names = [t.text for t in texts if t.semantic_role == "notes_service_name"]
+    assert "OKTA" in service_names
+
+
 # --- CN/CS node icon tests ---
 
 
@@ -265,3 +275,13 @@ def test_cs_nodes_have_icons() -> None:
     icons = [e for e in ir.elements if isinstance(e, IRIcon)]
     cs_icon_keys = {i.icon_key for i in icons if i.icon_key in ("office365", "entra")}
     assert cs_icon_keys == {"office365", "entra"}
+
+
+def test_cs_okta_node_has_icon() -> None:
+    ir = compute_layout(_make_request(
+        show_cloud_services=True,
+        cloud_services_okta=True,
+    ))
+    icons = [e for e in ir.elements if isinstance(e, IRIcon)]
+    cs_icon_keys = {i.icon_key for i in icons if i.icon_key in ("okta",)}
+    assert cs_icon_keys == {"okta"}

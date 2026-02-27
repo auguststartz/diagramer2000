@@ -28,6 +28,7 @@ ICON_MAP = {
     "office365": ICON_ROOT_CLOUD / "office365.png",
     "hosted_epic": ICON_ROOT_CLOUD / "hosted_epic.png",
     "entra": ICON_ROOT_CLOUD / "entra.png",
+    "okta": ICON_ROOT_CLOUD / "okta.png",
 }
 ICON_KEYWORDS = {
     "ec2": ("ec2", "elastic-compute-cloud"),
@@ -44,6 +45,7 @@ ICON_KEYWORDS = {
     "office365": ("office365", "o365"),
     "hosted_epic": ("hosted_epic", "hosted-epic"),
     "entra": ("entra", "azure-ad"),
+    "okta": ("okta",),
 }
 
 

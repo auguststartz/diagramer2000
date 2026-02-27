@@ -50,6 +50,10 @@ SERVICE_DESCRIPTIONS: dict[str, tuple[str, str]] = {
         "Entra",
         "Microsoft Entra ID (formerly Azure AD) integration for cloud-based identity and access management, providing single sign-on and conditional access policies for fax services.",
     ),
+    "cloud_services_okta": (
+        "OKTA",
+        "Okta cloud identity integration for centralized authentication, single sign-on, and adaptive multi-factor access control across fax-related applications and services.",
+    ),
 }
 
 NOTES_LEFT_MARGIN = 80
@@ -526,6 +530,8 @@ def compute_layout(payload: DiagramRequest) -> DiagramIR:
             cs_nodes.append(("Hosted EPIC", "#2563EB", "hosted_epic"))
         if payload.cloud_services_entra:
             cs_nodes.append(("Entra", "#2563EB", "entra"))
+        if payload.cloud_services_okta:
+            cs_nodes.append(("OKTA", "#2563EB", "okta"))
 
         if cs_nodes:
             node_w, node_h = 150, 100

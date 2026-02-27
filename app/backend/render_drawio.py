@@ -52,6 +52,7 @@ _SERVICE_ICON_STYLES: dict[str, str] = {
     "office365": _CLOUD_ICON_STYLE,
     "hosted_epic": _CLOUD_ICON_STYLE,
     "entra": _CLOUD_ICON_STYLE,
+    "okta": _CLOUD_ICON_STYLE,
 }
 
 

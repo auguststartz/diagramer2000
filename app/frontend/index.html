@@ -144,6 +144,11 @@
                         Entra
                     </label>
 
+                    <label class="check-row" style="margin-left: 24px">
+                        <input type="checkbox" name="cloud_services_okta" />
+                        OKTA
+                    </label>
+
                     <label>
                         Footer Text
                         <textarea name="footer_text" maxlength="300" rows="3">
@@ -244,6 +249,8 @@ OpenText Fax Private Claude Production Environments are a pair of RightFax serve
                     formData.get("cloud_services_hosted_epic") === "on";
                 payload.cloud_services_entra =
                     formData.get("cloud_services_entra") === "on";
+                payload.cloud_services_okta =
+                    formData.get("cloud_services_okta") === "on";
                 payload.footer_text = formData.get("footer_text") || "";
                 delete payload.export_format;
 
